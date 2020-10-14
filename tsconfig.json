@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+        "jsx": "preserve",
+        "moduleResolution": "node",
+        "module": "CommonJS",
+        "esModuleInterop": true,
+        "removeComments": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "target": "es2019",
+        "sourceMap": true,
+        "outDir": "./dist",
+        "baseUrl": "./",
+        "incremental": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "strict": true,
+        "paths": {
+            "~/*": [
+                "./src/*"
+            ]
+        }
+    },
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}
