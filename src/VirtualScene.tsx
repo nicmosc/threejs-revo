@@ -2,12 +2,11 @@ import React, { Fragment, useEffect, useRef, useState } from 'react';
 
 import { useLoadScene, MeshWithColor } from './use-load-scene';
 import { useFrame, useThree } from 'react-three-fiber';
-import { Mesh, PerspectiveCamera, Vector2, Vector3, VectorKeyframeTrack } from 'three';
+import { PerspectiveCamera, Vector3 } from 'three';
 
-import { Controls } from './Controls';
 import { Pan } from './App';
 
-import file from './files/teapot-v2.FBX';
+import file from 'files/teapot-v2.FBX';
 
 function _pan(camera: PerspectiveCamera, pan: Pan) {
   const { dx, dy } = pan;

@@ -76,9 +76,7 @@ export function useLoadScene(
   const object = useLoader(FBXLoader, url);
 
   useMemo(() => {
-    console.log(object);
     object.traverse((child) => {
-      // console.log(child);
       if (_isMesh(child)) {
         let mesh = child as MeshWithColor;
 
