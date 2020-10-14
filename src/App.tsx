@@ -17,6 +17,7 @@ export const App = () => {
   const yPosRef = useRef<number>();
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<Pan>({ dx: 0, dy: 0 });
+  const [activeEntityId, setActiveEntityId] = useState<string>();
 
   const handleRotate = (e: MouseEvent) => {
     if (xPosRef.current == null) {
@@ -90,11 +91,23 @@ export const App = () => {
           // ...panningStyle,
         }}>
         <Suspense fallback="Loading">
-          <VirtualScene currentFrame={frame} zoom={zoom} pan={pan} />
+          <VirtualScene
+            onClickEntity={setActiveEntityId}
+            activeEntityId={activeEntityId}
+            currentFrame={frame}
+            zoom={zoom}
+            pan={pan}
+          />
         </Suspense>
       </Canvas>
 
-      <BeautyViewer frames={60} currentFrame={frame} zoom={zoom} pan={pan} />
+      {/* <BeautyViewer
+        activeEntityId={activeEntityId}
+        frames={60}
+        currentFrame={frame}
+        zoom={zoom}
+        pan={pan}
+      /> */}
     </Fragment>
   );
 };

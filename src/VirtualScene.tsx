@@ -1,6 +1,6 @@
 import React, { Fragment, useEffect, useRef, useState } from 'react';
 
-import { useLoadScene, MeshWithColor } from './use-load-scene';
+import { useLoadScene, CustomMesh } from './use-load-scene';
 import { useFrame, useThree } from 'react-three-fiber';
 import { PerspectiveCamera, Vector3 } from 'three';
 
@@ -40,9 +40,17 @@ interface VirtualSceneProps {
   currentFrame: number;
   zoom: number;
   pan: Pan;
+  activeEntityId?: string;
+  onClickEntity: (id: string) => void;
 }
 
-export const VirtualScene = ({ currentFrame, zoom, pan }: VirtualSceneProps) => {
+export const VirtualScene = ({
+  currentFrame,
+  zoom,
+  pan,
+  activeEntityId,
+  onClickEntity,
+}: VirtualSceneProps) => {
   const [activeId, setActiveId] = useState<string>();
   const cameraRef = useRef<PerspectiveCamera>();
 
@@ -110,12 +118,16 @@ export const VirtualScene = ({ currentFrame, zoom, pan }: VirtualSceneProps) => 
         lookAt={userData?.lookAt}
       />
       {model.children.map((child) => {
-        const mesh = child as MeshWithColor;
-        const active = child.uuid === activeId;
+        const mesh = child as CustomMesh;
+        const active = mesh.uuid === activeId;
+        const { locked, parent } = mesh.userData;
+        const visible = locked || parent === activeEntityId;
         return (
           <primitive
+            visible={visible}
             onPointerOver={handleMouseMove}
             onPointerOut={handleMouseMove}
+            onClick={locked || !visible ? null : () => onClickEntity(mesh.uuid)}
             key={child.uuid}
             object={child}>
             <meshStandardMaterial

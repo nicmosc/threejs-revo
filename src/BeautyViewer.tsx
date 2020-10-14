@@ -8,6 +8,7 @@ interface BeautyViewerProps {
   frames: number;
   zoom: number;
   pan: Pan;
+  activeEntityId?: string;
 }
 
 export const BeautyViewer = ({ currentFrame, frames, zoom, pan }: BeautyViewerProps) => {

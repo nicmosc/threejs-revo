@@ -16,15 +16,37 @@ import {
   VectorKeyframeTrack,
 } from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
-import { get } from 'lodash';
+import { get, last } from 'lodash';
 
-export interface MeshWithColor extends Mesh {
+export enum ObjectType {
+  BUILDING = 'BUILDING',
+  FLOOR = 'FLOOR',
+  UNIT = 'UNIT',
+}
+
+export interface Data {
+  _ID?: string;
+  parent?: string;
+  locked?: boolean;
+}
+
+export interface CustomMesh extends Mesh {
   color: Color;
+  userData: Data;
 }
 
 export interface AnimationData {
   positions: Array<Vector3>;
   rotations: Array<Quaternion>;
+}
+
+function _buildData(name: string, meshes: Array<CustomMesh>): Data {
+  // this should use listing info instead
+  const nameChunks = name.split('_-_');
+  const maxID = last(nameChunks)?.split('_')[1];
+  const parentPartialName = nameChunks.slice(0, -2).join('_-_') + '_-_ID';
+  const parentID = meshes.find((mesh) => mesh.name.includes(parentPartialName))?.uuid;
+  return { _ID: maxID, parent: parentID };
 }
 
 function _extractAnimations(object: Group) {
@@ -65,20 +87,22 @@ function _isCamera(object: Object3D): object is PerspectiveCamera {
 export function useLoadScene(
   url: string,
 ): {
-  model: Mesh;
+  model: Group;
   camera?: PerspectiveCamera;
   animation?: AnimationData;
 } {
-  const modelRef = useRef<Mesh>(new Mesh());
+  const modelRef = useRef<Group>(new Group());
   const cameraRef = useRef<PerspectiveCamera>();
   const animation = useRef<AnimationData>();
 
   const object = useLoader(FBXLoader, url);
 
   useMemo(() => {
+    let meshes: Array<CustomMesh> = [];
+
     object.traverse((child) => {
       if (_isMesh(child)) {
-        let mesh = child as MeshWithColor;
+        let mesh = child as CustomMesh;
 
         if (child.name.includes('SUR')) {
           const material = new MeshStandardMaterial({
@@ -86,15 +110,15 @@ export function useLoadScene(
           });
           mesh.material = material;
           mesh.userData = { locked: true };
+          modelRef.current.children.push(mesh);
         } else {
           const material = new MeshStandardMaterial({
             color: 0xffffff,
           });
           mesh.material = material;
           mesh.color = new Color(0x00ff00);
+          meshes.push(mesh);
         }
-
-        modelRef.current.children.push(mesh);
       } else if (_isCamera(child) && child.name.includes('360')) {
         cameraRef.current = child;
         // set up look at
@@ -105,6 +129,11 @@ export function useLoadScene(
       }
     });
 
+    for (const mesh of meshes) {
+      const data = _buildData(mesh.name, meshes);
+      mesh.userData = data;
+      modelRef.current.children.push(mesh);
+    }
     animation.current = _extractAnimations(object);
   }, []);
 
