@@ -17,6 +17,8 @@ export const App = () => {
   const yPosRef = useRef<number>();
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<Pan>({ dx: 0, dy: 0 });
+
+  // max ID
   const [activeEntityId, setActiveEntityId] = useState<string>();
 
   const handleRotate = (e: MouseEvent) => {
@@ -101,13 +103,28 @@ export const App = () => {
         </Suspense>
       </Canvas>
 
-      {/* <BeautyViewer
-        activeEntityId={activeEntityId}
-        frames={60}
-        currentFrame={frame}
-        zoom={zoom}
-        pan={pan}
-      /> */}
+      {activeEntityId == null ? (
+        <BeautyViewer
+          key={activeEntityId}
+          frames={60}
+          url={'/teapot-image-360'}
+          currentFrame={frame}
+          // frames={1}
+          // currentFrame={0}
+          // url="/teapot-image-floor"
+          zoom={zoom}
+          pan={pan}
+        />
+      ) : (
+        <BeautyViewer
+          key={activeEntityId}
+          frames={1}
+          currentFrame={0}
+          url="/teapot-image-floor"
+          zoom={zoom}
+          pan={pan}
+        />
+      )}
     </Fragment>
   );
 };

@@ -40,40 +40,54 @@ export interface AnimationData {
   rotations: Array<Quaternion>;
 }
 
+function _getMaxID(name: string): string | undefined {
+  const nameChunks = name.split('_-_');
+  return last(nameChunks)?.split('_')[1];
+}
+
 function _buildData(name: string, meshes: Array<CustomMesh>): Data {
   // this should use listing info instead
   const nameChunks = name.split('_-_');
-  const maxID = last(nameChunks)?.split('_')[1];
+  const maxID = _getMaxID(name);
   const parentPartialName = nameChunks.slice(0, -2).join('_-_') + '_-_ID';
-  const parentID = meshes.find((mesh) => mesh.name.includes(parentPartialName))?.uuid;
+  const parentMesh = meshes.find((mesh) => mesh.name.includes(parentPartialName));
+  const parentID = parentMesh != null ? _getMaxID(parentMesh.name) : undefined;
   return { _ID: maxID, parent: parentID };
 }
 
-function _extractAnimations(object: Group) {
-  // NOTE: get correct clip per camera, and not first only
-  const clip: AnimationClip = get(object, 'animations[0]');
-  const [_vKTrack, _qKTrack] = clip.tracks;
-  const vKTrack = _vKTrack as VectorKeyframeTrack;
-  const qKTrack = _qKTrack as QuaternionKeyframeTrack;
-  const vTrackSize = vKTrack.getValueSize();
-  const qTrackSize = qKTrack.getValueSize();
+function _extractAnimations(object: Group): Record<string, AnimationData> | undefined {
+  const animations: Array<AnimationClip> | undefined = get(object, 'animations');
 
-  let positions: Array<Vector3> = [];
-  let rotations: Array<Quaternion> = [];
-  const vValues = vKTrack.values;
-  const qValues = qKTrack.values;
-
-  for (let i = 0; i < vValues.length; i = i + vTrackSize) {
-    const vector = new Vector3(vValues[i], vValues[i + 1], vValues[i + 2]);
-    positions.push(vector);
+  if (animations == null) {
+    return undefined;
   }
 
-  for (let i = 0; i < qValues.length; i = i + qTrackSize) {
-    const quaternion = new Quaternion(qValues[i], qValues[i + 1], qValues[i + 2], qValues[i + 3]);
-    rotations.push(quaternion);
-  }
+  return animations.reduce((memo, clip: AnimationClip) => {
+    const [_vKTrack, _qKTrack] = clip.tracks;
+    const vKTrack = _vKTrack as VectorKeyframeTrack;
+    const qKTrack = _qKTrack as QuaternionKeyframeTrack;
+    const vTrackSize = vKTrack.getValueSize();
+    const qTrackSize = qKTrack.getValueSize();
+    // use this somehow
+    const camName = vKTrack.name.split('.')[0];
 
-  return { rotations, positions };
+    let positions: Array<Vector3> = [];
+    let rotations: Array<Quaternion> = [];
+    const vValues = vKTrack.values;
+    const qValues = qKTrack.values;
+
+    for (let i = 0; i < vValues.length; i = i + vTrackSize) {
+      const vector = new Vector3(vValues[i], vValues[i + 1], vValues[i + 2]);
+      positions.push(vector);
+    }
+
+    for (let i = 0; i < qValues.length; i = i + qTrackSize) {
+      const quaternion = new Quaternion(qValues[i], qValues[i + 1], qValues[i + 2], qValues[i + 3]);
+      rotations.push(quaternion);
+    }
+
+    return { ...memo, ['A']: { rotations, positions } };
+  }, {}) as Record<string, AnimationData>;
 }
 
 function _isMesh(object: Object3D): object is Mesh {
@@ -88,12 +102,12 @@ export function useLoadScene(
   url: string,
 ): {
   model: Group;
-  camera?: PerspectiveCamera;
-  animation?: AnimationData;
+  cameras?: Record<string, PerspectiveCamera>;
+  animations?: Record<string, AnimationData>;
 } {
   const modelRef = useRef<Group>(new Group());
-  const cameraRef = useRef<PerspectiveCamera>();
-  const animation = useRef<AnimationData>();
+  const camerasRef = useRef<Record<string, PerspectiveCamera>>({});
+  const animations = useRef<Record<string, AnimationData>>();
 
   const object = useLoader(FBXLoader, url);
 
@@ -101,6 +115,7 @@ export function useLoadScene(
     let meshes: Array<CustomMesh> = [];
 
     object.traverse((child) => {
+      console.log(child);
       if (_isMesh(child)) {
         let mesh = child as CustomMesh;
 
@@ -119,13 +134,15 @@ export function useLoadScene(
           mesh.color = new Color(0x00ff00);
           meshes.push(mesh);
         }
-      } else if (_isCamera(child) && child.name.includes('360')) {
-        cameraRef.current = child;
+      } else if (_isCamera(child)) {
+        // automate this
+        const linkedMaxID = child.name.includes('360') ? 'A' : '12';
         // set up look at
         const target = child.children.find((_child) => _child.name.includes('Target'));
         if (target != null) {
-          cameraRef.current.userData = { lookAt: target.position };
+          child.userData = { lookAt: target.position };
         }
+        camerasRef.current[linkedMaxID] = child;
       }
     });
 
@@ -134,8 +151,8 @@ export function useLoadScene(
       mesh.userData = data;
       modelRef.current.children.push(mesh);
     }
-    animation.current = _extractAnimations(object);
+    animations.current = _extractAnimations(object);
   }, []);
 
-  return { model: modelRef.current, camera: cameraRef.current, animation: animation.current };
+  return { model: modelRef.current, cameras: camerasRef.current, animations: animations.current };
 }
