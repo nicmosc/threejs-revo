@@ -115,7 +115,6 @@ export function useLoadScene(
     let meshes: Array<CustomMesh> = [];
 
     object.traverse((child) => {
-      console.log(child);
       if (_isMesh(child)) {
         let mesh = child as CustomMesh;
 
@@ -136,6 +135,7 @@ export function useLoadScene(
         }
       } else if (_isCamera(child)) {
         // automate this
+        console.log(child);
         const linkedMaxID = child.name.includes('360') ? 'A' : '12';
         // set up look at
         const target = child.children.find((_child) => _child.name.includes('Target'));
