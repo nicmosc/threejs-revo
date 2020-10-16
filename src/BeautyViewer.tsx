@@ -8,12 +8,14 @@ interface BeautyViewerProps {
   frames: number;
   zoom: number;
   pan: Pan;
+  activeEntityId?: string;
+  url: string;
 }
 
-export const BeautyViewer = ({ currentFrame, frames, zoom, pan }: BeautyViewerProps) => {
+export const BeautyViewer = ({ currentFrame, frames, zoom, pan, url }: BeautyViewerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const { images } = useLoadImages('/teapot-images', frames);
+  const { images } = useLoadImages(url, frames);
 
   const handleDrawImage = () => {
     if (canvasRef.current != null && images != null) {

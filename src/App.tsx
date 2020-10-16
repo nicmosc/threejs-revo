@@ -18,6 +18,9 @@ export const App = () => {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<Pan>({ dx: 0, dy: 0 });
 
+  // max ID
+  const [activeEntityId, setActiveEntityId] = useState<string>();
+
   const handleRotate = (e: MouseEvent) => {
     if (xPosRef.current == null) {
       xPosRef.current = e.clientX;
@@ -90,11 +93,38 @@ export const App = () => {
           // ...panningStyle,
         }}>
         <Suspense fallback="Loading">
-          <VirtualScene currentFrame={frame} zoom={zoom} pan={pan} />
+          <VirtualScene
+            onClickEntity={setActiveEntityId}
+            activeEntityId={activeEntityId}
+            currentFrame={frame}
+            zoom={zoom}
+            pan={pan}
+          />
         </Suspense>
       </Canvas>
 
-      <BeautyViewer frames={60} currentFrame={frame} zoom={zoom} pan={pan} />
+      {activeEntityId == null ? (
+        <BeautyViewer
+          key={activeEntityId}
+          frames={60}
+          url={'/teapot-image-360'}
+          currentFrame={frame}
+          // frames={1}
+          // currentFrame={0}
+          // url="/teapot-image-floor"
+          zoom={zoom}
+          pan={pan}
+        />
+      ) : (
+        <BeautyViewer
+          key={activeEntityId}
+          frames={1}
+          currentFrame={0}
+          url="/teapot-image-floor"
+          zoom={zoom}
+          pan={pan}
+        />
+      )}
     </Fragment>
   );
 };
